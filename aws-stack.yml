@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Kaboom environment
+
+Parameters:
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+
+Resources:
+
+  # A VPC is an isolated portion of the AWS cloud populated by AWS objects, such as Amazon EC2 instances.
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # A network subnet within the VPC.
+  Subnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # A security group is a set of firewall rules that control the traffic for your instance.
+  EC2SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access via port 22 + web access
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0 # ! Everyone can access! Careful! Better idea would be to use bastion host.
+        # - IpProtocol: tcp
+        #   FromPort: '80' # TODO: check which ports I actually want to open
+        #   ToPort: '80'
+        #   CidrIp: 0.0.0.0/0 # Public access
+
+  EC2Instance-1:
+      Type: AWS::EC2::Instance
+      Properties:
+        ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
+        InstanceType: t2.micro # TODO: for now hardcoded
+        AvailabilityZone: eu-west-3a
+        KeyName: !Ref KeyName
+        SecurityGroups:
+        - !Ref Ec2SecurityGroup
+        Tags:
+          - Key: Application
+            Value: !Ref 'AWS::StackId'
+          - Name: Name
+            Value: Server-1
+
+  EC2Instance-2:
+      Type: AWS::EC2::Instance
+      Properties:
+        ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
+        InstanceType: t2.micro # TODO: for now hardcoded
+        AvailabilityZone: eu-west-3b
+        KeyName: !Ref KeyName
+        SecurityGroups:
+        - !Ref Ec2SecurityGroup
+        Tags:
+          - Key: Application
+            Value: !Ref 'AWS::StackId'
+          - Name: Name
+            Value: Server-2
+
+# MyLoadBalancer:
+#   Type: AWS::ElasticLoadBalancing::LoadBalancer
+#   Properties:
+#     AvailabilityZones:
+#     - "eu-west-3a"
+#     - "eu-west-3b"
+#     - "eu-west-3c"
+#     Listeners:
+#     - LoadBalancerPort: '80'
+#       InstancePort: '80'
+#       Protocol: HTTP
