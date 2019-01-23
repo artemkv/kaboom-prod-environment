@@ -47,7 +47,7 @@ Resources:
         #   ToPort: '80'
         #   CidrIp: 0.0.0.0/0 # Public access
 
-  EC2Instance-1:
+  EC2Instance1:
       Type: AWS::EC2::Instance
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
@@ -55,14 +55,14 @@ Resources:
         AvailabilityZone: eu-west-3a
         KeyName: !Ref KeyName
         SecurityGroups:
-        - !Ref Ec2SecurityGroup
+          - !Ref EC2SecurityGroup
         Tags:
           - Key: Application
             Value: !Ref 'AWS::StackId'
           - Name: Name
             Value: Server-1
 
-  EC2Instance-2:
+  EC2Instance2:
       Type: AWS::EC2::Instance
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
@@ -70,7 +70,7 @@ Resources:
         AvailabilityZone: eu-west-3b
         KeyName: !Ref KeyName
         SecurityGroups:
-        - !Ref Ec2SecurityGroup
+          - !Ref EC2SecurityGroup
         Tags:
           - Key: Application
             Value: !Ref 'AWS::StackId'
