@@ -9,6 +9,8 @@ Parameters:
 
 Resources:
 
+  # Create a VPC
+
   # A VPC is an isolated portion of the AWS cloud populated by AWS objects, such as Amazon EC2 instances.
   VPC:
     Type: 'AWS::EC2::VPC'
@@ -18,8 +20,85 @@ Resources:
         - Key: Application
           Value: !Ref 'AWS::StackName'
 
+  # Attach an Internet gateway to the VPC
+
+  # Creates a new Internet gateway in your AWS account. After creating the Internet gateway, you then attach it to a VPC.
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # Attaches a gateway to a VPC.
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Create public subnets - to put the load balancer into
+
   # A network subnet within the VPC.
-  SubnetA:
+  SubnetAPublic:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: eu-west-3a
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # A network subnet within the VPC.
+  SubnetBPublic:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: eu-west-3b
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # Route the traffic from public subnets to the Internet gateway
+
+  # Creates a new route table within a VPC.
+  RouteTablePublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Ref 'AWS::StackName'
+
+  # Creates a new route in a route table within a VPC.
+  RouteTablePublicInternetRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTablePublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  # Associates a subnet with a route table.
+  RouteTableAssociationAPublic:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetAPublic
+      RouteTableId: !Ref RouteTablePublic
+
+  # Associates a subnet with a route table.
+  RouteTableAssociationBPublic:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetBPublic
+      RouteTableId: !Ref RouteTablePublic
+
+  # Create private subnets - for our instances
+
+  # A network subnet within the VPC.
+  SubnetAPrivate:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
@@ -30,7 +109,7 @@ Resources:
           Value: !Ref 'AWS::StackName'
 
   # A network subnet within the VPC.
-  SubnetB:
+  SubnetBPrivate:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
@@ -39,6 +118,10 @@ Resources:
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackName'
+
+  # TODO: use Network ACL!!!
+
+  # Create EC2 instances in a security group
 
   # A security group is a set of firewall rules that control the traffic for your instance.
   EC2SecurityGroup:
@@ -54,17 +137,21 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: 0.0.0.0/0 # ! Everyone can access! Careful! Better idea would be to use bastion host.
-        # - IpProtocol: tcp
-        #   FromPort: '80' # TODO: check which ports I actually want to open
-        #   ToPort: '80'
-        #   CidrIp: 0.0.0.0/0 # Public access
+        - IpProtocol: tcp
+          FromPort: '8600' # events service
+          ToPort: '8600'
+          SourceSecurityGroupId: !Ref PublicLoadBalancerSecurityGroup # ELB
+        - IpProtocol: tcp
+          FromPort: '8700' # web service
+          ToPort: '8700'
+          SourceSecurityGroupId: !Ref PublicLoadBalancerSecurityGroup # ELB
 
   EC2Instance1:
       Type: AWS::EC2::Instance
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
         InstanceType: t2.micro # TODO: for now hardcoded
-        SubnetId: !Ref SubnetA
+        SubnetId: !Ref SubnetAPrivate
         KeyName: !Ref KeyName
         SecurityGroupIds: # Since we are using VPC, we need to use SecurityGroupIds and not SecurityGroups
           - !Ref EC2SecurityGroup
@@ -79,7 +166,7 @@ Resources:
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
         InstanceType: t2.micro # TODO: for now hardcoded
-        SubnetId: !Ref SubnetB
+        SubnetId: !Ref SubnetBPrivate
         KeyName: !Ref KeyName
         SecurityGroupIds: # Since we are using VPC, we need to use SecurityGroupIds and not SecurityGroups
           - !Ref EC2SecurityGroup
@@ -89,14 +176,43 @@ Resources:
           - Key: Name
             Value: Server-2
 
-# MyLoadBalancer:
-#   Type: AWS::ElasticLoadBalancing::LoadBalancer
-#   Properties:
-#     AvailabilityZones:
-#     - "eu-west-3a"
-#     - "eu-west-3b"
-#     - "eu-west-3c"
-#     Listeners:
-#     - LoadBalancerPort: '80'
-#       InstancePort: '80'
-#       Protocol: HTTP
+  # Create EC2 instances in a security group
+
+  # A security group is a set of firewall rules that control the traffic for your instance.
+  PublicLoadBalancerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Public ELB Security Group with HTTP access on ports 8600, 8700 from the internet
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '8600' # events service
+          ToPort: '8600'
+          CidrIp: 0.0.0.0/0 # Everyone
+        - IpProtocol: tcp
+          FromPort: '8700' # web service
+          ToPort: '8700'
+          CidrIp: 0.0.0.0/0 # Everyone
+
+  # Creates a LoadBalancer
+  MyLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref SubnetAPublic
+        - !Ref SubnetBPublic
+      SecurityGroups:
+        - Ref: PublicLoadBalancerSecurityGroup
+      Instances:
+        - Ref: EC2Instance1
+        - Ref: EC2Instance2
+      Listeners:
+        - LoadBalancerPort: '8600'
+          InstancePort: '8600'
+          Protocol: HTTP
+        - LoadBalancerPort: '8700'
+          InstancePort: '8700'
+          Protocol: HTTP

@@ -1,0 +1,11 @@
+- auto-assign public ip (MapPublicIpOnLaunch on subnet?)
+- You are creating an internet-facing Load Balancer, but there is no Internet Gateway attached to these subnets you have selected
+    - ELB should be in a public subnet, not instances
+    - You must create public subnets in the same Availability Zones as the private subnets that are used by your private instances. Then associate these public subnets to the internet-facing load balancer.
+    - If a subnet’s default traffic is routed to an internet gateway, the subnet is known as a public subnet.
+    - If a subnet's default traffic is routed to a NAT instance/gateway or completely lacks a default route, the subnet is known as a private subnet.
+
+- https
+
+8600 - events service
+8700 - web service
