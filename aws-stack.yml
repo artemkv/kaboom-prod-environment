@@ -19,11 +19,23 @@ Resources:
           Value: !Ref 'AWS::StackName'
 
   # A network subnet within the VPC.
-  Subnet:
+  SubnetA:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.0.0/24
+      AvailabilityZone: eu-west-3a
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # A network subnet within the VPC.
+  SubnetB:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: eu-west-3b
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackName'
@@ -52,14 +64,14 @@ Resources:
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
         InstanceType: t2.micro # TODO: for now hardcoded
-        AvailabilityZone: eu-west-3a
+        SubnetId: !Ref SubnetA
         KeyName: !Ref KeyName
-        SecurityGroups:
+        SecurityGroupIds: # Since we are using VPC, we need to use SecurityGroupIds and not SecurityGroups
           - !Ref EC2SecurityGroup
         Tags:
           - Key: Application
             Value: !Ref 'AWS::StackId'
-          - Name: Name
+          - Key: Name
             Value: Server-1
 
   EC2Instance2:
@@ -67,14 +79,14 @@ Resources:
       Properties:
         ImageId: ami-05d0ea3220b4d2ac4 # TODO: for now hardcoded
         InstanceType: t2.micro # TODO: for now hardcoded
-        AvailabilityZone: eu-west-3b
+        SubnetId: !Ref SubnetB
         KeyName: !Ref KeyName
-        SecurityGroups:
+        SecurityGroupIds: # Since we are using VPC, we need to use SecurityGroupIds and not SecurityGroups
           - !Ref EC2SecurityGroup
         Tags:
           - Key: Application
             Value: !Ref 'AWS::StackId'
-          - Name: Name
+          - Key: Name
             Value: Server-2
 
 # MyLoadBalancer:
