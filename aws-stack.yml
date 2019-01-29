@@ -122,6 +122,44 @@ Resources:
         - Key: Application
           Value: !Ref 'AWS::StackName'
 
+  # Route the traffic from private subnets to the Internet gateway
+  # TODO: THIS IS TEMPORARY SOLUTION, TO ALLOW SSH ACCESS TO THE INSTANCES IN THE PRIVATE SUBNET
+  # TODO: INSTEAD OF DOING THIS, I SHOULD CREATE A BASTION HOST, BUT THAT'S EXTRA COST
+
+  # Creates a new route table within a VPC.
+  RouteTablePrivate:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Ref 'AWS::StackName'
+
+  # Creates a new route in a route table within a VPC.
+  RouteTablePrivateInternetRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  # Associates a subnet with a route table.
+  RouteTableAssociationAPrivate:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetAPrivate
+      RouteTableId: !Ref RouteTablePrivate
+
+  # Associates a subnet with a route table.
+  RouteTableAssociationBPrivate:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetBPrivate
+      RouteTableId: !Ref RouteTablePrivate
+
+  # TODO: END OF WORKAROUND
+
   # ACL for public and private networks
 
   # Creates a new network ACL in a VPC.
