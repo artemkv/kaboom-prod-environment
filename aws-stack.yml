@@ -257,6 +257,20 @@ Resources:
         To: 8700
 
   # Creates a rule in a network ACL.
+  InboundResponsesPrivateNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 103
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 32768
+        To: 65535
+
+  # Creates a rule in a network ACL.
   OutboundPrivateNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -495,7 +509,7 @@ Resources:
     Properties: 
       HostedZoneConfig:
         Comment: My hosted zone for api.kaboom-report.com
-      Name: api.kaboom-report.com
+      Name: api.kaboom-report.com.
 
   # DNS record
   DNSRecord:
