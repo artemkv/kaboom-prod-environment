@@ -315,6 +315,34 @@ Resources:
         To: 8700
 
   # Creates a rule in a network ACL.
+  InboundResponses1PublicNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 103
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.0.0/24'
+      PortRange:
+        From: 0
+        To: 65535
+
+  # Creates a rule in a network ACL.
+  InboundResponses2PublicNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 104
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.1.0/24'
+      PortRange:
+        From: 0
+        To: 65535
+
+  # Creates a rule in a network ACL.
   OutboundPublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -464,8 +492,9 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 60
-      UnhealthyThresholdCount: 10
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 4
       Port: 8600
       Protocol: HTTP
       Targets:
@@ -486,8 +515,9 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 60
-      UnhealthyThresholdCount: 10
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 4
       Port: 8700
       Protocol: HTTP
       Targets:
