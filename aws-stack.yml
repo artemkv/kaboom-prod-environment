@@ -6,6 +6,9 @@ Parameters:
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
+#  SSLCertificate:
+#    Description: The ARN of the certificate for the Load Balancer
+#    Type: 'String'
 
 Resources:
 
@@ -119,7 +122,159 @@ Resources:
         - Key: Application
           Value: !Ref 'AWS::StackName'
 
-  # TODO: use Network ACL!!!
+  # ACL for public and private networks
+
+  # Creates a new network ACL in a VPC.
+  NetworkAclPublic:
+    Type: 'AWS::EC2::NetworkAcl'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+        - Key: Name
+          Value: Public
+
+  # Creates a new network ACL in a VPC.
+  NetworkAclPrivate:
+    Type: 'AWS::EC2::NetworkAcl'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+        - Key: Name
+          Value: Private
+
+  # Associates a subnet with a network ACL.
+  SubnetNetworkAclAssociationAPrivate:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref SubnetAPrivate
+      NetworkAclId: !Ref NetworkAclPrivate
+
+  # Associates a subnet with a network ACL.
+  SubnetNetworkAclAssociationBPrivate:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref SubnetBPrivate
+      NetworkAclId: !Ref NetworkAclPrivate
+
+  # Associates a subnet with a network ACL.
+  SubnetNetworkAclAssociationAPublic:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref SubnetAPublic
+      NetworkAclId: !Ref NetworkAclPublic
+
+  # Associates a subnet with a network ACL.
+  SubnetNetworkAclAssociationBPublic:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      SubnetId: !Ref SubnetBPublic
+      NetworkAclId: !Ref NetworkAclPublic
+
+  # Rules for private subnets
+
+  # Creates a rule in a network ACL.
+  InboundSSHPrivateNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 100
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0' # TODO: should be a bastion host
+      PortRange:
+        From: 22
+        To: 22
+
+  # Creates a rule in a network ACL.
+  InboundEventsServicePrivateNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 101
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 8600
+        To: 8600
+
+  # Creates a rule in a network ACL.
+  InboundWebServicePrivateNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 102
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 8700
+        To: 8700
+
+  # Creates a rule in a network ACL.
+  OutboundPrivateNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 100
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: true # Outbound traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 0
+        To: 65535
+
+  # Rules for public subnets
+
+  # Creates a rule in a network ACL.
+  InboundEventsServicePublicNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 101
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 8600
+        To: 8600
+
+  # Creates a rule in a network ACL.
+  InboundWebServicePublicNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 102
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 8700
+        To: 8700
+
+  # Creates a rule in a network ACL.
+  OutboundPublicNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 100
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: true # Outbound traffic
+      CidrBlock: '0.0.0.0/0'
+      PortRange:
+        From: 0
+        To: 65535
 
   # Create EC2 instances in a security group
 
@@ -176,7 +331,7 @@ Resources:
           - Key: Name
             Value: Server-2
 
-  # Create EC2 instances in a security group
+  # Create load balancer in a security group
 
   # A security group is a set of firewall rules that control the traffic for your instance.
   PublicLoadBalancerSecurityGroup:
@@ -199,20 +354,107 @@ Resources:
 
   # Creates a LoadBalancer
   MyLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Subnets:
         - !Ref SubnetAPublic
         - !Ref SubnetBPublic
       SecurityGroups:
         - Ref: PublicLoadBalancerSecurityGroup
-      Instances:
-        - Ref: EC2Instance1
-        - Ref: EC2Instance2
-      Listeners:
-        - LoadBalancerPort: '8600'
-          InstancePort: '8600'
-          Protocol: HTTP
-        - LoadBalancerPort: '8700'
-          InstancePort: '8700'
-          Protocol: HTTP
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # A listener for an Application Load Balancer
+  EventsServiceListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: EventsServiceTargetGroup
+      LoadBalancerArn:
+        Ref: MyLoadBalancer
+      Port: '8600'
+      Protocol: HTTP # TODO: use HTTPS
+      # Certificates:
+      #  - CertificateArn: !Ref SSLCertificate
+
+  # A listener for an Application Load Balancer
+  WebServiceListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: WebServiceTargetGroup
+      LoadBalancerArn:
+        Ref: MyLoadBalancer
+      Port: '8700'
+      Protocol: HTTP # TODO: use HTTPS
+      # Certificates:
+      #  - CertificateArn: !Ref SSLCertificate
+
+  # Routes requests to one or more registered targets.
+  EventsServiceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 60
+      UnhealthyThresholdCount: 10
+      Port: 8600
+      Protocol: HTTP
+      Targets:
+      - Id:
+          Ref: EC2Instance1
+        Port: 8600
+      - Id:
+          Ref: EC2Instance2
+        Port: 8600
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # Routes requests to one or more registered targets.
+  WebServiceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 60
+      UnhealthyThresholdCount: 10
+      Port: 8700
+      Protocol: HTTP
+      Targets:
+      - Id:
+          Ref: EC2Instance1
+        Port: 8700
+      - Id:
+          Ref: EC2Instance2
+        Port: 8700
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackName'
+
+  # Creates a hosted zone
+  ApiKaboomReportCom: 
+    Type: AWS::Route53::HostedZone
+    Properties: 
+      HostedZoneConfig:
+        Comment: My hosted zone for api.kaboom-report.com
+      Name: api.kaboom-report.com
+
+  # DNS record
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref ApiKaboomReportCom
+      Comment: DNS name for app services.
+      Name: api.kaboom-report.com
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt MyLoadBalancer.DNSName
+        HostedZoneId: !GetAtt MyLoadBalancer.CanonicalHostedZoneID
