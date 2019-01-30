@@ -1,0 +1,12 @@
+[Unit]
+Description=Kafka
+Requires=zookeeper3.service zookeeper4.service network.target remote-fs.target
+After=zookeeper3.service zookeeper4.service network.target remote-fs.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/kafka/bin/kafka-server-start.sh -daemon /usr/local/bin/kafka/config/server.properties
+ExecStop=/usr/local/bin/kafka/bin/kafka-server-stop.sh
+
+[Install]
+WantedBy=multi-user.target
