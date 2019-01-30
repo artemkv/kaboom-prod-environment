@@ -380,6 +380,14 @@ Resources:
           FromPort: '8700' # web service
           ToPort: '8700'
           SourceSecurityGroupId: !Ref PublicLoadBalancerSecurityGroup # ELB
+        - IpProtocol: tcp
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 10.0.0.0/24
+        - IpProtocol: tcp
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: 10.0.1.0/24
 
   EC2Instance1:
       Type: AWS::EC2::Instance
