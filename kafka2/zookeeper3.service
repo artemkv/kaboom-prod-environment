@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=forking
-ExecStart=/usr/local/bin/kafka/bin/zookeeper-server-start.sh /usr/local/bin/kafka/config/zookeeper3.properties
+ExecStart=/usr/local/bin/kafka/bin/zookeeper-server-start.sh -daemon /usr/local/bin/kafka/config/zookeeper3.properties
 
 [Install]
 WantedBy=multi-user.target
