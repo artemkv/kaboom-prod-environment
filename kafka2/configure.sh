@@ -17,8 +17,8 @@ echo "4" > /tmp/zookeeper4/myid
 
 # Set up services
 cp ./kafka.service /etc/systemd/system/kafka.service
-cp ./zookeeper1.service /etc/systemd/system/zookeeper3.service
-cp ./zookeeper2.service /etc/systemd/system/zookeeper4.service
+cp ./zookeeper3.service /etc/systemd/system/zookeeper3.service
+cp ./zookeeper4.service /etc/systemd/system/zookeeper4.service
 
 systemctl daemon-reload
 systemctl enable kafka.service
