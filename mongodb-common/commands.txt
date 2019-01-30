@@ -1,0 +1,4 @@
+- run configure to copy config
+- run start to start the service
+- run setup-rc to setup a replica set
+- run create_db to seed the db
