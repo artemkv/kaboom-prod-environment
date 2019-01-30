@@ -1,7 +1,7 @@
 [Unit]
 Description=Kafka
-Requires=zookeeper3.service zookeeper4.service network.target remote-fs.target
-After=zookeeper3.service zookeeper4.service network.target remote-fs.target
+Requires=zookeeper3.service network.target remote-fs.target
+After=zookeeper3.service network.target remote-fs.target
 
 [Service]
 Type=forking
