@@ -212,14 +212,16 @@ Resources:
       SubnetId: !Ref SubnetBPublic
       NetworkAclId: !Ref NetworkAclPublic
 
-  # Rules for private subnets
+
+  # ACL rules for private subnets
 
   # Creates a rule in a network ACL.
+  # Allows incoming SSH connections
   InboundSSHPrivateNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
-      RuleNumber: 100
+      RuleNumber: 110
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -229,39 +231,73 @@ Resources:
         To: 22
 
   # Creates a rule in a network ACL.
-  InboundEventsServicePrivateNetworkAclEntry:
+  # Allows accessing events service from public subnets (ELB)
+  InboundEventsServicePrivate1NetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
-      RuleNumber: 101
+      RuleNumber: 111
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
-      CidrBlock: '0.0.0.0/0'
+      CidrBlock: '10.0.2.0/24'
       PortRange:
         From: 8600
         To: 8600
 
   # Creates a rule in a network ACL.
-  InboundWebServicePrivateNetworkAclEntry:
+  # Allows accessing events service from public subnets (ELB)
+  InboundEventsServicePrivate2NetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
-      RuleNumber: 102
+      RuleNumber: 112
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
-      CidrBlock: '0.0.0.0/0'
+      CidrBlock: '10.0.3.0/24'
+      PortRange:
+        From: 8600
+        To: 8600
+        
+  # Creates a rule in a network ACL.
+  # Allows accessing web service from public subnets (ELB)
+  InboundWebServicePrivate1NetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 113
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.2.0/24'
       PortRange:
         From: 8700
         To: 8700
 
   # Creates a rule in a network ACL.
+  # Allows accessing web service from public subnets (ELB)
+  InboundWebServicePrivate2NetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 114
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.3.0/24'
+      PortRange:
+        From: 8700
+        To: 8700
+
+  # Creates a rule in a network ACL.
+  # In case instance initiates the internet connection (like 'git pull'),
+  # this rule allows responses to come in
   InboundResponsesPrivateNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
-      RuleNumber: 103
+      RuleNumber: 115
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -271,6 +307,37 @@ Resources:
         To: 65535
 
   # Creates a rule in a network ACL.
+  # Allows incoming traffic between private subnets
+  InboundAllPrivate1NetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 116
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.0.0/24'
+      PortRange:
+        From: 0
+        To: 65535
+
+  # Creates a rule in a network ACL.
+  # Allows incoming traffic between private subnets
+  InboundAllPrivate2NetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 117
+      Protocol: 6 # TCP
+      RuleAction: allow
+      Egress: false # Incoming traffic
+      CidrBlock: '10.0.1.0/24'
+      PortRange:
+        From: 0
+        To: 65535
+        
+  # Creates a rule in a network ACL.
+  # Allows all outbound traffic
   OutboundPrivateNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -284,14 +351,16 @@ Resources:
         From: 0
         To: 65535
 
-  # Rules for public subnets
+
+  # ACL rules for public subnets
 
   # Creates a rule in a network ACL.
+  # Allows accessing events service from all over Internet
   InboundEventsServicePublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPublic
-      RuleNumber: 101
+      RuleNumber: 111
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -301,11 +370,12 @@ Resources:
         To: 8600
 
   # Creates a rule in a network ACL.
+  # Allows accessing web service from all over Internet
   InboundWebServicePublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPublic
-      RuleNumber: 102
+      RuleNumber: 112
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -315,11 +385,12 @@ Resources:
         To: 8700
 
   # Creates a rule in a network ACL.
+  # Allows instances in the private subnets reply back to ELB
   InboundResponses1PublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPublic
-      RuleNumber: 103
+      RuleNumber: 113
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -329,11 +400,12 @@ Resources:
         To: 65535
 
   # Creates a rule in a network ACL.
+  # Allows instances in the private subnets reply back to ELB
   InboundResponses2PublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPublic
-      RuleNumber: 104
+      RuleNumber: 114
       Protocol: 6 # TCP
       RuleAction: allow
       Egress: false # Incoming traffic
@@ -343,6 +415,8 @@ Resources:
         To: 65535
 
   # Creates a rule in a network ACL.
+  # Allows responses to traffic from Internet
+  # But also forwarding requests to the the private network
   OutboundPublicNetworkAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -383,11 +457,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: '0'
           ToPort: '65535'
-          CidrIp: 10.0.0.0/24
+          CidrIp: 10.0.0.0/24 # Cross subnet traffic
         - IpProtocol: tcp
           FromPort: '0'
           ToPort: '65535'
-          CidrIp: 10.0.1.0/24
+          CidrIp: 10.0.1.0/24  # Cross subnet traffic
 
   EC2Instance1:
       Type: AWS::EC2::Instance
@@ -560,3 +634,11 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt MyLoadBalancer.DNSName
         HostedZoneId: !GetAtt MyLoadBalancer.CanonicalHostedZoneID
+
+# private
+# 10.0.0.0/24
+# 10.0.1.0/24
+
+# public
+# 10.0.2.0/24
+# 10.0.3.0/24
