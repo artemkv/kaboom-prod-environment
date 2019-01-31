@@ -6,9 +6,9 @@ Parameters:
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instance
     Type: 'AWS::EC2::KeyPair::KeyName'
-#  SSLCertificate:
-#    Description: The ARN of the certificate for the Load Balancer
-#    Type: 'String'
+  SSLCertificate:
+    Description: The ARN of the certificate for the Load Balancer
+    Type: 'String'
 
 Resources:
 
@@ -550,9 +550,9 @@ Resources:
       LoadBalancerArn:
         Ref: MyLoadBalancer
       Port: '8600'
-      Protocol: HTTP # TODO: use HTTPS
-      # Certificates:
-      #  - CertificateArn: !Ref SSLCertificate
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificate
 
   # A listener for an Application Load Balancer
   WebServiceListener:
@@ -565,9 +565,9 @@ Resources:
       LoadBalancerArn:
         Ref: MyLoadBalancer
       Port: '8700'
-      Protocol: HTTP # TODO: use HTTPS
-      # Certificates:
-      #  - CertificateArn: !Ref SSLCertificate
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificate
 
   # Routes requests to one or more registered targets.
   EventsServiceTargetGroup:
