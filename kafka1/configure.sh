@@ -8,12 +8,12 @@ cp ./zookeeper1.properties /usr/local/bin/kafka/config/zookeeper1.properties
 cp ./zookeeper2.properties /usr/local/bin/kafka/config/zookeeper2.properties
 
 # Set up zookeeper1 id
-mkdir -p /tmp/zookeeper1
-echo "1" > /tmp/zookeeper1/myid
+mkdir -p /var/zookeeper1
+echo "1" > /var/zookeeper1/myid
 
 # Set up zookeeper2 id
-mkdir -p /tmp/zookeeper2
-echo "2" > /tmp/zookeeper2/myid
+mkdir -p /var/zookeeper2
+echo "2" > /var/zookeeper2/myid
 
 # Set up services
 cp ./kafka.service /etc/systemd/system/kafka.service

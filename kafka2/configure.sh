@@ -7,8 +7,8 @@ cp ./server.properties /usr/local/bin/kafka/config/server.properties
 cp ./zookeeper3.properties /usr/local/bin/kafka/config/zookeeper3.properties
 
 # Set up zookeeper3 id
-mkdir -p /tmp/zookeeper3
-echo "3" > /tmp/zookeeper3/myid
+mkdir -p /var/zookeeper3
+echo "3" > /var/zookeeper3/myid
 
 # Set up services
 cp ./kafka.service /etc/systemd/system/kafka.service
