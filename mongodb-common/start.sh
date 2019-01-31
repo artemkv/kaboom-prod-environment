@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 
 # Start MongoDB
-sudo service mongod start
+systemctl daemon-reload
+systemctl enable mongod
+systemctl start mongod
