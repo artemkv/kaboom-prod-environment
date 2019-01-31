@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# todo: update images
+# update images
 docker pull artemkv/kaboom-events-service:latest
 docker pull artemkv/kaboom-web-service:latest
 docker pull artemkv/kaboom-stats-service:latest
